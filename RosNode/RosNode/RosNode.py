@@ -6,6 +6,7 @@ import time
 import os
 if os.name!='nt':
     import rospy
+    from std_msgs.msg import *
 
 
 class Servo:
@@ -78,13 +79,44 @@ class GripperInterface:
         '''
         return amount*0.503
 
-    def increment(self,amount):
-        self.__writeCommand(self.servos[1].channel, self.servos[1].pos+self.__mmToUms(amount))
-
     def test(self,servo,ammount):
         self.__writeCommand(self.servos[servo].channel, ammount)
 
-if __name__ == '__main__':
+    def increment(self,msg):
+        self.__writeCommand(self.servos[1].channel, self.servos[1].pos+self.__mmToUms(msg.data))
+
+    def openclose(self,msg):
+        if msg.data == 0:
+            self.__open()
+        elif msg.data == 1:
+            self.__close(1)
+        elif msg.data == 2:
+            self.__close(2)
+
+
+def rosmain():
+    rospy.init_node('gripper', anonymous=True)
+    full_param_name = rospy.search_param('port')
+    port = rospy.get_param(full_param_name)
+
+    full_param_name = rospy.search_param('debug')
+    d = rospy.get_param(full_param_name)
+    debug = False
+    if d: debug = bool(d)
+
+    full_param_name = rospy.search_param('oc_channel')
+    oc_channel = rospy.get_param(full_param_name)
+    full_param_name = rospy.search_param('i_channel')
+    i_channel = rospy.get_param(full_param_name)
+    
+    AI = GripperInterface(port,debug)
+    
+    rospy.Subscriber(oc_channel,Int32,AI.openclose)
+    rospy.Subscriber(i_channel,Float32,AI.increment)
+    rospy.spin()
+    return 0
+
+def cmd_line_main():
     "/dev/ttyACM0"
     print "Starting"
     debug = bool(input("Debug 1/0: "))
@@ -97,3 +129,7 @@ if __name__ == '__main__':
         while val <2000 and val>=0:
             val = input("val: ")
             if (val >= 0) and (channel >= 0): AI.test(channel,val)
+    return 0
+
+if __name__ == '__main__':
+    cmd_line_main()
