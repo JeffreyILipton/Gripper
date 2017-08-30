@@ -52,3 +52,5 @@ GripperControl/Debug/
 GripperControl/__vm/
 *.filters
 *.vcxproj
+Chopsaw/Debug/
+Chopsaw/__vm/
