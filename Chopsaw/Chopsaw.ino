@@ -9,8 +9,12 @@ int Motor_break = 8;
 int Motor_pot = A0;
 
 
-float target = 0;
-float val = 0;
+///float target = 0;
+//float val = 0;
+
+int target = 0;
+int val = 0;
+const float A = 255.0 / 1024.0;
 
 void setup()
 {
@@ -39,12 +43,12 @@ void loop()
 		if (c == 'o') 
 		{
 			Serial.print("Opening");
-			target = 0.9;
+			target = 1000;
 		}
 		else if (c == 'c') 
 		{
 			Serial.print("Closing");
-			target = 0.10;
+			target = 100;
 		}
 		else if (c == 'b')
 		{
@@ -56,10 +60,8 @@ void loop()
 			Serial.print("Blade Stoping");
 			digitalWrite(PowerTail_pwm, LOW);
 		}
-		
-
-
 	}
+	MotorController();
 
 }
 
@@ -67,9 +69,11 @@ void loop()
 void MotorController() 
 {
 	val = analogRead(Motor_pot)/1023;
-	float p = target - val;
-	float pabs = fabs(p);
-	if (p > 0) 
+	int  delta = target - val;
+	int delta_abs = abs(delta);
+	int pwm = 0;
+
+	if (delta > 0) 
 	{
 		digitalWrite(Motor_D, HIGH);
 	}
@@ -77,9 +81,9 @@ void MotorController()
 	{
 		digitalWrite(Motor_D, LOW);
 	}
-	int pwm = 0;
-	if (pabs > 0.10) {
-		pwm = int(pabs * 255);
+
+	if (delta_abs > 50) {
+		pwm = int(A*delta_abs);
 	}
 	analogWrite(Motor_pwm, pwm);
 }
