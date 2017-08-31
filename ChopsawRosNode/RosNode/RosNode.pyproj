@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>bbae5191-4964-4aac-bec0-f40df6dae3a6</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>RosNode.py</StartupFile>
+    <StartupFile>Chopsaw.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,7 +22,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="RosNode.py" />
+    <Compile Include="Chopsaw.py" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
