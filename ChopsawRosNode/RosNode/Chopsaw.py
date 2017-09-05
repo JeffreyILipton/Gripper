@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from enum import IntEnum
 import serial
 import struct
 import time
@@ -9,13 +8,6 @@ if os.name!='nt':
     from std_msgs.msg import *
 
 
-class Servo:
-    def __init__(self,channel,min,max):
-        self.channel = channel
-        self.min = min
-        self.max = max
-        self.pos = min
-
 class ChopsawInterface:
     """Serial Interface to Gripper"""
     def __init__(self,port,debug=False, pub = False):
@@ -24,47 +16,56 @@ class ChopsawInterface:
         if not port:
             self.port = serial.Serial()
         else:
-            self.port = serial.Serial(port,9600,parity = serial.PARITY_NONE, stopbits = serial.STOPBITS_ONE,xonxoff=False,timeout=10.0)
+            self.port = serial.Serial(port,9600,parity = serial.PARITY_NONE, stopbits = serial.STOPBITS_ONE,xonxoff=False,timeout=0.5)
             self.port.close()
             self.port.open()
 
-        time.sleep(2);
-        if debug: "Start: ", self.port.read_all()
+        #time.sleep(2);
+        if debug: "Start: ", self.port.readline()
 
-        self.__open();
+        #self.__move('o');
 
 
     def __writeCommand(self,cmd):
             if self.port.isOpen() :
-                self.port.read_all();
+                if self.port.inWaiting():
+                    r = self.port.readline();
+                    if self.debug: print r
                 nb_written = self.port.write(cmd)
                 if (len(cmd) != nb_written) and self.debug :
                     print "Error only wrote %i not %i bytes"%(nb_written,len(cmd))
                 received = self.port.read();
-                if received != cmd: 
-                    if self.debug :print "Error, recieved: %s\t expetected%s"%(received,cmd)  
+                if self.debug : print received
+                if received != cmd:
+                    if self.debug :print "Error, recieved: %s\t expetected%s"%(received,cmd)
                     return False
                 return True
 
     def __move(self,cmd):
         if self.__writeCommand(cmd):
-            response = self.port.read()
-            while self.port.read() != 's':
-                time.sleep(0.1)
-            if self.pub: self.pub(True)
+            n = 0
+            response = ''
+            while (response != 's'):
+                response = self.port.read()
+                if self.debug: print n,":",response
+                n+=1
+            if self.pub: self.pub.publish(True)
 
 
     def __stopped(self):
         if self.pub: self.pub(True)
 
     def test(self,cmd):
-        self.__writeCommand(cmd)
+        if cmd == 'c' or cmd =='o':
+            self.__move(cmd)
+        else:
+            self.__writeCommand(cmd)
 
     def blade(self,msg):
         if msg.data:
-            self.__writeCommand('B')
-        else:
             self.__writeCommand('b')
+        else:
+            self.__writeCommand('B')
 
     def openclose(self,msg):
         if msg.data:
@@ -88,13 +89,13 @@ def rosmain():
     oc_channel = rospy.get_param(full_param_name)
     full_param_name = rospy.search_param('b_channel')
     b_channel = rospy.get_param(full_param_name)
-    
+
     pub = rospy.Publisher('Chopsaw_move', Bool, queue_size=1)
 
-    AI = GripperInterface(port,debug,pub)
-    
+    AI = ChopsawInterface(port,debug,pub)
+
     rospy.Subscriber(oc_channel,Bool,AI.openclose)
-    rospy.Subscriber(i_channel,Bool,AI.blade)
+    rospy.Subscriber(b_channel,Bool,AI.blade)
     rospy.spin()
     return 0
 
@@ -103,14 +104,15 @@ def cmd_line_main():
     print "Starting"
     debug = bool(input("Debug 1/0: "))
     print debug
-    AI = GripperInterface("COM6",debug)
+    AI = ChopsawInterface("/dev/ttyACM0",debug)
     cmd = ''
     while cmd != 'q' and cmd != 'Q':
         cmd = input("cmd: ")
         AI.test(cmd)
-        time.sleep(0.5)
-        print "Read: ", AI.port.read_all()
+        if AI.port.inWaiting():
+            print "Read: ", AI.port.readline()
     return 0
 
 if __name__ == '__main__':
-    cmd_line_main()
+    #cmd_line_main()
+    rosmain()
