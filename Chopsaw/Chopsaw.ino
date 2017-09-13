@@ -17,10 +17,11 @@ int Motor_pot = A0;
 int target = 0;
 int val = 0;
 //const float A = 255.0 / 1024.0;
-int open = 29;
-int closed = 40;
+//int opened = 52;
+//int closed = 59;
 bool startstop = false;
-
+int n = 0;
+int thresh = 1500;
 
 void setup()
 {
@@ -49,19 +50,21 @@ void loop()
 		if (c == 'o') 
 		{
 			Serial.print("o");
-			target = open;
+			n=0;
+			target = 1;// opened;
 			startstop = true;
 		}
 		else if (c == 'c') 
 		{
 			Serial.print("c");
-			target = closed;
+			n=0;
+			target = -1;//closed;
 			startstop = true;
 		}
 		else if (c == 's')
 		{
 			Serial.print("s");
-			target = val;
+			target = 0;///val;
 			startstop = false;
 			digitalWrite(Motor_pwm, LOW);
 		}
@@ -84,24 +87,25 @@ void loop()
 void MotorController() 
 {
 	val = analogRead(Motor_pot);
-	int  delta = target - val;
-	int delta_abs = abs(delta);
+	//int  delta = target - val;
+	//int delta_abs = abs(delta);
 	int pwm = 0;
 
-	if (delta > 0) 
+	if (target < 0 && (n<thresh)) 
 	{
 		digitalWrite(Motor_D, LOW);
 	}
-	else 
+	else
 	{
 		digitalWrite(Motor_D, HIGH);
 	}
 
-	if ( (delta_abs > 1) && ( (val>open) || (val <closed) ) )
+	if (  (n<thresh)) //(delta_abs >= 1) &&
 	{
 		pwm = 255;
 		digitalWrite(Motor_pwm, 255);
 		digitalWrite(Motor_break, LOW);
+		Serial.println(val);
 	}
 	else 
 	{
@@ -110,7 +114,7 @@ void MotorController()
 		digitalWrite(Motor_pwm, 0);
 		digitalWrite(Motor_break, HIGH);
 	}
-
+	n++;
 	//Serial.print("read: ");
 	//Serial.println(val);
 }
